@@ -16,21 +16,19 @@ import PTN
 
 
 
-@Client.on_message(filters.command("repair_mode") & filters.incoming)
+@Client.on_message(filters.command("repair_mode") & filters.incoming & filters.user(ADMINS))
 async def repair_mode_cmd(client, message):
-    if not message.from_user or message.from_user.id not in ADMINS:
-        return await message.reply_text("You are not authorized to use this command.")
-    
+
     args = message.text.split()
     if len(args) != 2 or args[1].lower() not in ["on", "off"]:
-        return await message.reply_text("Usage: `/repair_mode on` or `/repair_mode off`")
+        return await message.reply_text("ℹ️ Usage: `/repair_mode on` or `/repair_mode off`")
     
     if args[1].lower() == "on":
         await db.set_repair_mode(True)
-        await message.reply_text("Repair Mode activated successfully.")
+        await message.reply_text("✅ Repair Mode activated successfully.")
     else:
         await db.set_repair_mode(False)
-        await message.reply_text("Repair Mode deactivated successfully.")
+        await message.reply_text("✅ Repair Mode deactivated successfully.")
 
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
@@ -71,8 +69,8 @@ async def start(client, message):
             InlineKeyboardButton('📢 Updates', url=UPDATES_LINK),
             InlineKeyboardButton('💬 Support', url=SUPPORT_LINK)
         ],[
-            InlineKeyboardButton('💡 Hᴇʟᴘ', callback_data='help'),
-            InlineKeyboardButton('ℹ️ Aʙᴏᴜᴛ', callback_data='about')
+            InlineKeyboardButton('💡 Help', callback_data='help'),
+            InlineKeyboardButton('ℹ️ About', callback_data='about')
         ],[
             InlineKeyboardButton('💎 Buy Premium', url=f"https://t.me/{temp.U_NAME}?start=premium"),
             InlineKeyboardButton('🔍 Search Inline', switch_inline_query_current_chat=''),
@@ -110,7 +108,7 @@ async def start(client, message):
         btn = await is_subscribed(client, message)
         if btn:
             reply_markup = InlineKeyboardMarkup(btn)
-            await message.reply(f"Please join my 'Updates Channel' and use inline search. 👍",
+            await message.reply(f"📢 Please join my 'Updates Channel' and use inline search. 👍",
                 reply_markup=reply_markup,
                 parse_mode=enums.ParseMode.HTML
             )
@@ -120,7 +118,7 @@ async def start(client, message):
         _, token = mc.split("_", 1)
         verify_status = (await get_verify_status(message.from_user.id)).copy()
         if verify_status['verify_token'] != token:
-            return await message.reply("Your verify token is invalid.")
+            return await message.reply("❌ Your verify token is invalid.")
         expiry_time = datetime.now() + timedelta(seconds=VERIFY_EXPIRE)
         await update_verify_status(message.from_user.id, is_verified=True, expire_time=expiry_time)
         if verify_status["link"] == "":
@@ -143,7 +141,7 @@ async def start(client, message):
         ],[
             InlineKeyboardButton('📖 Tutorial', url=VERIFY_TUTORIAL)
         ]]
-        await message.reply("You not verified today! Kindly verify now. 🔐", reply_markup=InlineKeyboardMarkup(btn), protect_content=True)
+        await message.reply("🔐 You are not verified today! Kindly verify now.", reply_markup=InlineKeyboardMarkup(btn), protect_content=True)
         return
 
     btn = await is_subscribed(client, message)
@@ -337,28 +335,21 @@ async def link(bot, message):
         await m.edit(f'❌ <b>An error occurred:</b> <code>{e}</code>')
 
 
-@Client.on_message(filters.command('index_channels'))
+@Client.on_message(filters.command('index_channels') & filters.user(ADMINS))
 async def channels_info(bot, message):
-    user_id = message.from_user.id
-    if user_id not in ADMINS:
-        await message.delete()
-        return
     ids = INDEX_CHANNELS
     if not ids:
         return await message.reply("⚠️ <b>Configuration Missing!</b>\n\n<blockquote><code>INDEX_CHANNELS</code> variable is not configured in settings.</blockquote>")
-    text = '**Indexed Channels:**\n\n'
+    text = '📑 **Indexed Channels:**\n\n'
     for id in ids:
         chat = await bot.get_chat(id)
         text += f'{chat.title}\n'
     text += f'\n**Total:** {len(ids)}'
     await message.reply(text)
 
-@Client.on_message(filters.command('stats'))
+@Client.on_message(filters.command('stats') & filters.user(ADMINS))
 async def stats(bot, message):
-    user_id = message.from_user.id
-    if user_id not in ADMINS:
-        await message.delete()
-        return
+
     files = await db_count_documents()
     users = await db.total_users_count()
     chats = await db.total_chat_count()
@@ -440,12 +431,9 @@ async def connect(client, message):
             await message.reply_text("ℹ️ <b>Usage:</b> <code>/connect group_id</code>\n<i>Or simply use <code>/connect</code> directly inside your group!</i>")
 
 
-@Client.on_message(filters.command('delete'))
+@Client.on_message(filters.command('delete') & filters.user(ADMINS))
 async def delete_file(bot, message):
-    user_id = message.from_user.id
-    if user_id not in ADMINS:
-        await message.delete()
-        return
+
     try:
         query = message.text.split(" ", 1)[1]
     except:
@@ -466,7 +454,7 @@ async def img_2_link(bot, message):
     file = reply_to_message.photo
     if file is None:
         return await message.reply('❌ <b>Invalid Media!</b>\n\n<blockquote>Please reply to a valid photo or PNG/JPG image.</blockquote>')
-    text = await message.reply_text(text="ᴘʀᴏᴄᴇssɪɴɢ....")   
+    text = await message.reply_text(text="🔄 Processing....")   
     path = await reply_to_message.download()  
     response = upload_image(path)
     if not response:
@@ -610,8 +598,6 @@ async def prm_list(bot, message):
 
 
 
-
-
 @Client.on_message(filters.command('request'))
 async def request_cmd(bot, message):
     if len(message.command) < 2:
@@ -637,3 +623,20 @@ async def request_cmd(bot, message):
     except Exception as e:
         await message.reply(f"⚠️ <b>Failed to send request. Error:</b> <code>{e}</code>")
 
+
+
+@Client.on_message(filters.command("set_fsub") & filters.user(ADMINS))
+async def set_fsub_cmd(client, message):
+    if len(message.command) < 2:
+        return await message.reply("ℹ️ **Usage:** `/set_fsub channel_id1 channel_id2`\nExample: `/set_fsub -100123456789 -100987654321`")
+    channels = " ".join(message.command[1:])
+    await db.set_fsub(channels)
+    await message.reply(f"✅ <b>Force Sub Channels updated!</b>\n\nChannels: <code>{channels}</code>")
+
+@Client.on_message(filters.command("set_req_fsub") & filters.user(ADMINS))
+async def set_req_fsub_cmd(client, message):
+    if len(message.command) < 2:
+        return await message.reply("ℹ️ **Usage:** `/set_req_fsub channel_id`\nExample: `/set_req_fsub -100123456789`")
+    channel = message.command[1]
+    await db.set_req_fsub(channel)
+    await message.reply(f"✅ <b>Request Force Sub Channel updated!</b>\n\nChannel: <code>{channel}</code>")

@@ -253,6 +253,24 @@ class Database:
     async def set_repair_mode(self, value: bool):
         await self.stg.update_one({'id': BOT_ID}, {'$set': {'REPAIR_MODE': value}}, upsert=True)
 
+    async def get_fsub(self):
+        stg = await self.stg.find_one({'id': BOT_ID})
+        if not stg:
+            return None
+        return stg.get('FORCE_SUB_CHANNELS', None)
+
+    async def set_fsub(self, channels: str):
+        await self.stg.update_one({'id': BOT_ID}, {'$set': {'FORCE_SUB_CHANNELS': channels}}, upsert=True)
+
+    async def get_req_fsub(self):
+        stg = await self.stg.find_one({'id': BOT_ID})
+        if not stg:
+            return None
+        return stg.get('REQUEST_FORCE_SUB_CHANNEL', None)
+
+    async def set_req_fsub(self, channel: str):
+        await self.stg.update_one({'id': BOT_ID}, {'$set': {'REQUEST_FORCE_SUB_CHANNEL': channel}}, upsert=True)
+
     async def add_movie_req(self, req_id, user_id, movie_name):
         await self.movie_req.insert_one({'req_id': req_id, 'user_id': user_id, 'movie_name': movie_name})
 

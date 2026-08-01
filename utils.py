@@ -23,6 +23,7 @@ class temp(object):
     VERIFICATIONS = {}
     GET_ALL_FILES = {}
     USERS_CANCEL = False
+    SPELL_CHECK = {}
     GROUPS_CANCEL = False
     BOT = None
     PREMIUM = {}
@@ -89,8 +90,10 @@ async def is_subscribed(bot, query):
     btn = []
     if await is_premium(query.from_user.id, bot):
         return btn
-    if FORCE_SUB_CHANNELS:
-        for id in FORCE_SUB_CHANNELS.split(' '):
+    fsub = await db.get_fsub()
+    fsub_channels = fsub if fsub else FORCE_SUB_CHANNELS
+    if fsub_channels:
+        for id in fsub_channels.split(' '):
             chat = await bot.get_chat(int(id))
             try:
                 await bot.get_chat_member(int(id), query.from_user.id)
@@ -98,8 +101,10 @@ async def is_subscribed(bot, query):
                 btn.append(
                     [InlineKeyboardButton(f'📢 Join : {chat.title}', url=chat.invite_link)]
                 )
-    if REQUEST_FORCE_SUB_CHANNEL and not await db.find_join_req(query.from_user.id):
-        id = REQUEST_FORCE_SUB_CHANNEL
+    req_fsub = await db.get_req_fsub()
+    req_fsub_channel = req_fsub if req_fsub else REQUEST_FORCE_SUB_CHANNEL
+    if req_fsub_channel and not await db.find_join_req(query.from_user.id):
+        id = req_fsub_channel
         chat = await bot.get_chat(int(id))
         try:
             await bot.get_chat_member(int(id), query.from_user.id)
@@ -135,92 +140,53 @@ def list_to_str(k):
         return ", ".join(str(i) for i in k)
 
 
-async def get_poster(query, bulk=False, id=False, file=None):
+async def get_poster(query):
     if not TMDB_API_KEY:
         return None
     TMDB_BASE = "https://api.themoviedb.org/3"
 
-    year = None
-    title = query
+    query = query.strip()
+    
+    import PTN
+    
+    parsed = PTN.parse(query)
+    title = parsed.get("title", query)
+    year = parsed.get("year", None)
 
-    if not id:
-        query = query.strip()
+    url = f"{TMDB_BASE}/search/multi"
+    params = {
+        "api_key": TMDB_API_KEY,
+        "query": title
+    }
 
-        year_match = re.findall(r"[1-2]\d{3}$", query)
-        if year_match:
-            year = year_match[0]
-            title = query.replace(year, "").strip()
+    res = requests.get(url, params=params).json()
 
-        elif file:
-            file_year = re.findall(r"[1-2]\d{3}", file)
-            if file_year:
-                year = file_year[0]
+    results = [
+        r for r in res.get("results", [])
+        if r.get("media_type") in ["movie", "tv"]
+    ]
 
-        url = f"{TMDB_BASE}/search/multi"
-        params = {
-            "api_key": TMDB_API_KEY,
-            "query": title
-        }
+    if not results:
+        return None
 
-        res = requests.get(url, params=params).json()
+    if year:
+        filtered = []
+        for r in results:
+            release = r.get("release_date") or r.get("first_air_date")
+            if release and release.startswith(str(year)):
+                filtered.append(r)
 
-        results = [
-            r for r in res.get("results", [])
-            if r.get("media_type") in ["movie", "tv"]
-        ]
+        if filtered:
+            results = filtered
 
-        if not results:
-            return None
+    data = results[0]
+    tmdb_id = data["id"]
+    media_type = data["media_type"]
 
-        if year:
-            filtered = []
-            for r in results:
-                release = r.get("release_date") or r.get("first_air_date")
-                if release and release.startswith(str(year)):
-                    filtered.append(r)
-
-            if filtered:
-                results = filtered
-
-        if bulk:
-            _bulk = []
-            for r in results:
-                _title = r.get("title") or r.get("name")
-                if _title:
-                    _bulk.append({
-                        "title": _title,
-                        "id": r["id"]
-                        })
-            return _bulk
-
-
-        data = results[0]
-        tmdb_id = data["id"]
-        media_type = data["media_type"]
-
-    else:
-        tmdb_id = query
-
-        movie_test = requests.get(
-            f"{TMDB_BASE}/movie/{tmdb_id}",
-            params={"api_key": TMDB_API_KEY}
-        )
-
-        if movie_test.status_code == 200:
-            media_type = "movie"
-            data = movie_test.json()
-        else:
-            media_type = "tv"
-            data = requests.get(
-                f"{TMDB_BASE}/tv/{tmdb_id}",
-                params={"api_key": TMDB_API_KEY}
-            ).json()
-
-    if not id:
-        data = requests.get(
-            f"{TMDB_BASE}/{media_type}/{tmdb_id}",
-            params={"api_key": TMDB_API_KEY}
-        ).json()
+    data = requests.get(
+        f"{TMDB_BASE}/{media_type}/{tmdb_id}",
+        params={"api_key": TMDB_API_KEY}
+    ).json()
 
     title = data.get("title") or data.get("name")
 
@@ -395,11 +361,11 @@ def get_wish():
     time = datetime.now(pytz.timezone(TIME_ZONE))
     now = time.strftime("%H")
     if now < "12":
-        status = "ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ 🌞"
+        status = "🌅 Good morning 🌞"
     elif now < "18":
-        status = "ɢᴏᴏᴅ ᴀꜰᴛᴇʀɴᴏᴏɴ 🌗"
+        status = "🌤️ Good afternoon 🌗"
     else:
-        status = "ɢᴏᴏᴅ ᴇᴠᴇɴɪɴɢ 🌘"
+        status = "🌙 Good evening 🌘"
     return status
     
 async def get_seconds(time_string):
@@ -503,3 +469,28 @@ async def render_list_page(client, query_or_msg, user_id, list_type="watchlist",
         await query_or_msg.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
 
+
+async def get_imdb_suggestions(query):
+    try:
+        from urllib.parse import quote
+        import aiohttp
+        url = f'https://v3.sg.media-imdb.com/suggestion/x/{quote(query.lower())}.json'
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    results = []
+                    for d in data.get('d', []):
+                        if d.get('q') in ['feature', 'TV series', 'TV mini-series', 'TV movie', 'video', 'short', 'TV special', 'TV short', 'documentary']:
+                            title = d.get('l')
+                            year = d.get('y')
+                            if year:
+                                title = f"{title} ({year})"
+                            results.append({
+                                'title': title,
+                                'id': d.get('id')
+                            })
+                    return results
+    except Exception as e:
+        print(f"IMDb suggest error: {e}")
+    return []

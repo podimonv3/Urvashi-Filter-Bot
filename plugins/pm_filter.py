@@ -9,10 +9,11 @@ from datetime import datetime, timedelta
 from info import AUTO_FILTER, PM_SEARCH, VERIFY_TUTORIAL, IS_PREMIUM, PICS, TUTORIAL, TUTORIAL_NAME, SHORTLINK_API, SHORTLINK_URL, OWNER_USERNAME, SECOND_FILES_DATABASE_URL, ADMINS, URL, MAX_BTN, BIN_CHANNEL, IS_STREAM, DELETE_TIME, FILMS_LINK, LOG_CHANNEL, SUPPORT_GROUP, SUPPORT_LINK, UPDATES_LINK, LANGUAGES, QUALITY
 from pyrogram.types import ReplyParameters, WebAppInfo, PreCheckoutQuery, Message, LabeledPrice, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, LinkPreviewOptions
 from pyrogram import Client, filters, enums
-from utils import get_plan_name, handle_next_back, is_premium, get_size, is_subscribed, is_check_admin, get_wish, get_shortlink, get_readable_time, get_poster, temp, get_settings, save_group_settings, render_list_page
+from utils import get_plan_name, handle_next_back, is_premium, get_size, is_subscribed, is_check_admin, get_wish, get_shortlink, get_readable_time, get_poster, get_imdb_suggestions, temp, get_settings, save_group_settings, render_list_page
 from database.users_chats_db import db
 from database.ia_filterdb import delete_files, db_count_documents, second_db_count_documents, get_search_results
 from plugins.commands import get_grp_stg
+from urllib.parse import quote
 
 BUTTONS = {}
 CAP = {}
@@ -166,23 +167,23 @@ async def pm_search(client, message):
 
     
     if not PM_SEARCH:
-        return await message.reply_text('PM search was disabled!')
+        return await message.reply_text('⚠️ PM search was disabled!')
     if await is_premium(message.from_user.id, client):
         if not AUTO_FILTER:
-            return await message.reply_text('Auto filter was disabled!')
+            return await message.reply_text('⚠️ Auto filter was disabled!')
         s = await message.reply(f"<b><i>🔎 `{message.text}` searching...</i></b>", reply_parameters=ReplyParameters(message_id=message.id))
         await auto_filter(client, message, s)
     else:
         files = await get_search_results(message.text)
         total = len(files)
         btn = [[
-            InlineKeyboardButton("🗂 ᴄʟɪᴄᴋ ʜᴇʀᴇ 🗂", url=FILMS_LINK)
+            InlineKeyboardButton("🗂 Click Here 🗂", url=FILMS_LINK)
         ],[
             InlineKeyboardButton('🤑 Buy Premium', url=f"https://t.me/{temp.U_NAME}?start=premium")
             ]]
         reply_markup=InlineKeyboardMarkup(btn)
         if int(total) != 0:
-            await message.reply_text(f'<b><i>🤗 ᴛᴏᴛᴀʟ <code>{total}</code> ʀᴇꜱᴜʟᴛꜱ ꜰᴏᴜɴᴅ ɪɴ ᴛʜɪꜱ ɢʀᴏᴜᴘ 👇</i></b>\n\nor buy premium subscription', reply_markup=reply_markup)
+            await message.reply_text(f'<b><i>🤗 total <code>{total}</code> results found in this group 👇</i></b>\n\nor buy premium subscription', reply_markup=reply_markup)
 
             
 
@@ -193,13 +194,13 @@ async def group_search(client, message):
 
     if AUTO_FILTER:
         if not user_id:
-            await message.reply("I'm not working for anonymous admin!")
+            await message.reply("❌ I'm not working for anonymous admin!")
             return
         if SUPPORT_GROUP and message.chat.id == SUPPORT_GROUP:
             files = await get_search_results(message.text)
             if files:
                 btn = [[
-                    InlineKeyboardButton("Here", url=FILMS_LINK)
+                    InlineKeyboardButton("📍 Here", url=FILMS_LINK)
                 ]]
                 await message.reply_text(f'Total {len(files)} results found in this group', reply_markup=InlineKeyboardMarkup(btn))
             return
@@ -210,7 +211,7 @@ async def group_search(client, message):
         s = await message.reply(f"<b><i>🔎 `{message.text}` searching...</i></b>")
         await auto_filter(client, message, s)
     else:
-        k = await message.reply_text('Auto Filter Off! ❌')
+        k = await message.reply_text('❌ Auto Filter Off!')
         await asyncio.sleep(5)
         await k.delete()
         try:
@@ -239,7 +240,7 @@ async def next_page(bot, query):
     temp.GET_ALL_FILES[key] = files
     settings = await get_settings(query.message.chat.id)
     auto_del_time = settings.get("auto_delete_time", DELETE_TIME)
-    del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(auto_del_time)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
+    del_msg = f"\n\n<b>⚠️ this message will be auto delete after <code>{get_readable_time(auto_del_time)}</code> to avoid copyright issues</b>" if settings["auto_delete"] else ''
     files_link = ''
 
     if settings['links']:
@@ -266,7 +267,7 @@ async def next_page(bot, query):
         )
     elif n_offset == 0:
         btn.append(
-            [InlineKeyboardButton("« Back", callback_data=f"next_{req}_{key}_{off_set}"),
+            [InlineKeyboardButton("🔙 Back", callback_data=f"next_{req}_{key}_{off_set}"),
              InlineKeyboardButton(f"{math.ceil(int(offset) / MAX_BTN) + 1}/{math.ceil(total / MAX_BTN)}", callback_data="buttons")]
         )
     elif off_set is None:
@@ -276,7 +277,7 @@ async def next_page(bot, query):
     else:
         btn.append(
             [
-                InlineKeyboardButton("« Back", callback_data=f"next_{req}_{key}_{off_set}"),
+                InlineKeyboardButton("🔙 Back", callback_data=f"next_{req}_{key}_{off_set}"),
                 InlineKeyboardButton(f"{math.ceil(int(offset) / MAX_BTN) + 1}/{math.ceil(total / MAX_BTN)}", callback_data="buttons"),
                 InlineKeyboardButton("⏭️ Next", callback_data=f"next_{req}_{key}_{n_offset}")
             ]
@@ -637,15 +638,16 @@ async def advantage_spoll_choker(bot, query):
     _, id, user = query.data.split('#')
     if int(user) != 0 and query.from_user.id != int(user):
         return await query.answer(f"⚠️ Hello {query.from_user.first_name},\nThese results are not for you! Please search for your own movie/series.", show_alert=True)
-    movie = await get_poster(id, id=True)
-    search = movie.get('title')
+    search = temp.SPELL_CHECK.get(id)
+    if not search:
+        return await query.answer("⚠️ This button has expired! Please search again.", show_alert=True)
     s = await query.message.edit_text(f"🔍 <b>Searching Cloud Database For:</b> <code>{search}</code>\n\n<blockquote>⏳ <i>Please wait while our smart indexing engine scans all high-speed cloud servers...</i></blockquote>")
     files = await get_search_results(search)
     if files:
         k = (search, files)
         await auto_filter(bot, query, s, k)
     else:
-        google_search = search.replace(" ", "+")
+        google_search = quote(search)
         btn = [[
             InlineKeyboardButton("💡 Instructions", callback_data='instructions'),
             InlineKeyboardButton("🌐 Search Google", url=f"https://www.google.com/search?q={google_search}")
@@ -964,8 +966,8 @@ async def cb_handler(client: Client, query: CallbackQuery):
             InlineKeyboardButton('📢 Updates', url=UPDATES_LINK),
             InlineKeyboardButton('💬 Support', url=SUPPORT_LINK)
         ],[
-            InlineKeyboardButton('💡 Hᴇʟᴘ', callback_data='help'),
-            InlineKeyboardButton('ℹ️ Aʙᴏᴜᴛ', callback_data='about')
+            InlineKeyboardButton('💡 Help', callback_data='help'),
+            InlineKeyboardButton('ℹ️ About', callback_data='about')
         ],[
             InlineKeyboardButton('💎 Buy Premium', url=f"https://t.me/{temp.U_NAME}?start=premium"),
             InlineKeyboardButton('🔍 Search Inline', switch_inline_query_current_chat=''),
@@ -984,10 +986,10 @@ async def cb_handler(client: Client, query: CallbackQuery):
         
     elif query.data == "about":
         buttons = [[
-            InlineKeyboardButton('📊 Sᴛᴀᴛᴜs', callback_data='stats'),
-            InlineKeyboardButton('📂 Sᴏᴜʀᴄᴇ Cᴏᴅᴇ', callback_data='source')
+            InlineKeyboardButton('📊 Status', callback_data='stats'),
+            InlineKeyboardButton('📂 Source Code', callback_data='source')
         ],[
-            InlineKeyboardButton('🧑‍💻 Bᴏᴛ Oᴡɴᴇʀ', callback_data='owner')
+            InlineKeyboardButton('🧑‍💻 Bot Owner', callback_data='owner')
         ],[
             InlineKeyboardButton('🔙 Back', callback_data='start')
         ]]
@@ -1035,8 +1037,8 @@ async def cb_handler(client: Client, query: CallbackQuery):
         
     elif query.data == "help":
         buttons = [[
-            InlineKeyboardButton('💡 Usᴇʀ Cᴏᴍᴍᴀɴᴅs', callback_data='user_command'),
-            InlineKeyboardButton('🛡️ Aᴅᴍɪɴ Cᴏᴍᴍᴀɴᴅs', callback_data='admin_command')
+            InlineKeyboardButton('💡 User Commands', callback_data='user_command'),
+            InlineKeyboardButton('🛡️ Admin Commands', callback_data='admin_command')
         ],[
             InlineKeyboardButton('🔙 Back', callback_data='start')
         ]]
@@ -1696,7 +1698,7 @@ async def auto_filter(client, msg, s, spoll=False):
         [InlineKeyboardButton('💎 Buy Premium', url=f"https://t.me/{temp.U_NAME}?start=premium")]
     )
 
-    imdb = await get_poster(search, file=(files[0])['file_name']) if settings["imdb"] else None
+    imdb = await get_poster(search) if settings["imdb"] else None
     TEMPLATE = settings['template']
     if imdb:
         cap = TEMPLATE.format(
@@ -1718,10 +1720,10 @@ async def auto_filter(client, msg, s, spoll=False):
             group_title=message.chat.title,
         )
     else:
-        cap = f"<b>💭 Hello {message.from_user.mention},\n♻️ ʜᴇʀᴇ ɪ ꜰᴏᴜɴᴅ ꜰᴏʀ ʏᴏᴜʀ sᴇᴀʀᴄʜ {search}...</b>"
+        cap = f"<b>💭 Hello {message.from_user.mention},\n♻️ here i found for your search {search}...</b>"
     CAP[key] = cap
     auto_del_time = settings.get("auto_delete_time", DELETE_TIME)
-    del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(auto_del_time)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
+    del_msg = f"\n\n<b>⚠️ this message will be auto delete after <code>{get_readable_time(auto_del_time)}</code> to avoid copyright issues</b>" if settings["auto_delete"] else ''
     if imdb and imdb.get('poster'):
         await s.delete()
         try:
@@ -1754,13 +1756,12 @@ async def auto_filter(client, msg, s, spoll=False):
 
 async def advantage_spell_chok(message, s):
     search = message.text
-    google_search = search.replace(" ", "+")
     btn = [[
         InlineKeyboardButton("💡 Instructions", callback_data='instructions'),
-        InlineKeyboardButton("🌐 Search Google", url=f"https://www.google.com/search?q={google_search}")
+        InlineKeyboardButton("🌐 Search Google", url=f"https://www.google.com/search?q={quote(search)}")
     ]]
     try:
-        movies = await get_poster(search, bulk=True)
+        movies = await get_imdb_suggestions(search)
     except:
         n = await s.edit_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
         await asyncio.sleep(60)
@@ -1782,11 +1783,10 @@ async def advantage_spell_chok(message, s):
 
     user = message.from_user.id if message.from_user else 0
     
-    buttons = [[
-        InlineKeyboardButton(text=f"🎬 {movie.get('title')}", callback_data=f"spolling#{movie['id']}#{user}")
-    ]
-        for movie in movies
-    ]
+    buttons = []
+    for movie in movies:
+        temp.SPELL_CHECK[movie['id']] = movie['title']
+        buttons.append([InlineKeyboardButton(text=f"🎬 {movie['title']}", callback_data=f"spolling#{movie['id']}#{user}")])
     buttons.append(
         [InlineKeyboardButton("✖️ Close", callback_data="close_data")]
     )

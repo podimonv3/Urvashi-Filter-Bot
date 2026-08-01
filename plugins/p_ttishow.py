@@ -61,7 +61,8 @@ async def leave_a_chat(bot, message):
     try:
         chat = int(chat)
     except:
-        chat = chat
+        return await message.reply('❌ <b>Invalid Chat ID!</b>\n\n<blockquote>Please enter a valid numeric Telegram Chat ID starting with <code>-100</code>.</blockquote>')
+
     try:
         buttons = [[
             InlineKeyboardButton('💬 Support', url=SUPPORT_LINK)
@@ -149,7 +150,7 @@ async def gen_invite_link(bot, message):
 @Client.on_message(filters.command('ban_user') & filters.user(ADMINS))
 async def ban_a_user(bot, message):
     if len(message.command) == 1:
-        return await message.reply('⚠️ <b>Missing User Details!</b>\n\n<blockquote>Please provide a User ID or @Username after the command. Example: <code>/ban_user @username</code></blockquote>')
+        return await message.reply('⚠️ <b>Missing User Details!</b>\n\n<blockquote>Please provide a User ID after the command. Example: <code>/ban_user 12345678</code></blockquote>')
     r = message.text.split(None)
     if len(r) > 2:
         reason = message.text.split(None, 2)[2]
@@ -160,7 +161,7 @@ async def ban_a_user(bot, message):
     try:
         chat = int(chat)
     except:
-        pass
+        return await message.reply('❌ <b>Invalid Chat ID!</b>\n\n<blockquote>Please enter a valid numeric Telegram Chat ID starting with <code>-100</code>.</blockquote>')
     try:
         k = await bot.get_users(chat)
     except Exception as e:
@@ -175,25 +176,17 @@ async def ban_a_user(bot, message):
         temp.BANNED_USERS.append(k.id)
         await message.reply(f"✅ <b>User Banned Successfully!</b>\n\n<blockquote>🚫 {k.mention} has been restricted from using the bot.</blockquote>")
    
-@Client.on_message(filters.command('unban_user'))
+@Client.on_message(filters.command('unban_user') & filters.user(ADMINS))
 async def unban_a_user(bot, message):
-    if message.from_user.id not in ADMINS:
-        return
     if len(message.command) == 1:
-        return await message.reply('⚠️ <b>Missing User Details!</b>\n\n<blockquote>Please provide a User ID or @Username after the command. Example: <code>/ban_user @username</code></blockquote>')
-    r = message.text.split(None)
-    if len(r) > 1:
-        reason = message.text.split(None, 1)[1]
-    else:
-        reason = "No reason Provided"
+        return await message.reply('⚠️ <b>Missing User Details!</b>\n\n<blockquote>Please provide a User ID after the command. Example: <code>/ban_user 12345678</code></blockquote>')
+    chat = message.command[1]
     try:
-        chat = int(reason)
+        chat = int(chat)
     except:
-        chat = reason
+        return await message.reply('❌ <b>Invalid Chat ID!</b>\n\n<blockquote>Please enter a valid numeric Telegram Chat ID starting with <code>-100</code>.</blockquote>')
     try:
         k = await bot.get_users(chat)
-    except PeerIdInvalid:
-        return await message.reply("❌ <b>Operation Failed!</b>\n\n<blockquote>⚠️ Error details: <code>PeerIdInvalid</code></blockquote>")
     except Exception as e:
         return await message.reply(f'❌ <b>Operation Failed!</b>\n\n<blockquote>⚠️ Error details: <code>{e}</code></blockquote>')
     else:
@@ -209,20 +202,20 @@ async def unban_a_user(bot, message):
 async def list_users(bot, message):
     raju = await message.reply('🔄 <b>Fetching Users List...</b>\n\n<blockquote>⏳ Retrieving database records, please wait...</blockquote>')
     users = await db.get_all_users()
-    out = "Users saved in database are:\n\n"
+    out = "👥 Users saved in database are:\n\n"
     for user in users:
         out += f"**Name:** {user['name']}\n**ID:** `{user['id']}`"
         if user['ban_status']['is_banned']:
-            out += ' (Banned User)'
+            out += ' 🚫 (Banned User)'
         if user['verify_status']['is_verified']:
-            out += ' (Verified User)'
+            out += ' ✅ (Verified User)'
         out += '\n\n'
     try:
         await raju.edit_text(out)
     except MessageTooLong:
         with open('users.txt', 'w+') as outfile:
             outfile.write(out)
-        await message.reply_document('users.txt', caption="List of users")
+        await message.reply_document('users.txt', caption="👥 List of users")
         await raju.delete()
         os.remove('users.txt')
 
@@ -230,26 +223,28 @@ async def list_users(bot, message):
 async def list_chats(bot, message):
     raju = await message.reply('🔄 <b>Fetching Chats List...</b>\n\n<blockquote>⏳ Retrieving group chat records, please wait...</blockquote>')
     chats = await db.get_all_chats()
-    out = "Chats saved in database are:\n\n"
+    out = "📁 Chats saved in database are:\n\n"
     for chat in chats:
         out += f"**Title:** {chat['title']}\n**ID:** `{chat['id']}`"
         if chat['chat_status']['is_disabled']:
-            out += ' (Disabled Chat)'
+            out += ' ❌ (Disabled Chat)'
         out += '\n\n'
     try:
         await raju.edit_text(out)
     except MessageTooLong:
         with open('chats.txt', 'w+') as outfile:
             outfile.write(out)
-        await message.reply_document('chats.txt', caption="List of chats")
+        await message.reply_document('chats.txt', caption="📁 List of chats")
         await raju.delete()
         os.remove('chats.txt')
 
 
 @Client.on_chat_join_request()
 async def join_reqs(client, message: ChatJoinRequest):
-    if REQUEST_FORCE_SUB_CHANNEL and message.chat.id == int(REQUEST_FORCE_SUB_CHANNEL):
-        if not db.find_join_req(message.from_user.id):
+    req_fsub = await db.get_req_fsub()
+    req_fsub_channel = req_fsub if req_fsub else REQUEST_FORCE_SUB_CHANNEL
+    if req_fsub_channel and message.chat.id == int(req_fsub_channel):
+        if not await db.find_join_req(message.from_user.id):
             await db.add_join_req(message.from_user.id)
 
 

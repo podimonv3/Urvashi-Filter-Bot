@@ -168,16 +168,37 @@ async def get_search_results(query):
 
         return results
 
-    if ' ' not in query:
-        raw_pattern = r'(\b|[\.\+\-_])' + query + r'(\b|[\.\+\-_])'
-    else:
-        raw_pattern = query.replace(' ', r'.*[\s\.\+\-_]')
+    import PTN
+    import re
+    parsed = PTN.parse(query)
+    title = parsed.get("title", query).strip()
 
-    db_query = {"$regex": raw_pattern, "$options": "i"}
-    search_filter = {"$or": [{"file_name": db_query}]}
+    title_words = [re.escape(word) for word in title.split()]
+    raw_pattern = r'[\s\.\+\-_]+'.join(title_words) if len(title_words) > 1 else r'\b' + re.escape(title) + r'\b'
+    
+    and_conditions = [{"$regex": raw_pattern, "$options": "i"}]
+    
+    if parsed.get("year"):
+        and_conditions.append({"$regex": rf"\b{parsed['year']}\b", "$options": "i"})
+    if parsed.get("season"):
+        and_conditions.append({"$regex": rf"\b(s|season)[\s\.\-_]*0?{parsed['season']}\b", "$options": "i"})
+    if parsed.get("episode"):
+        and_conditions.append({"$regex": rf"\b(e|episode|ep)[\s\.\-_]*0?{parsed['episode']}\b", "$options": "i"})
+    if parsed.get("language"):
+        and_conditions.append({"$regex": rf"\b{parsed['language']}\b", "$options": "i"})
+    if parsed.get("resolution"):
+        and_conditions.append({"$regex": rf"\b{parsed['resolution']}\b", "$options": "i"})
+    if parsed.get("quality"):
+        and_conditions.append({"$regex": rf"\b{parsed['quality']}\b", "$options": "i"})
+    if parsed.get("codec"):
+        and_conditions.append({"$regex": rf"\b{parsed['codec']}\b", "$options": "i"})
+    
+    db_query_list = [{"file_name": cond} for cond in and_conditions]
+    search_filter = {"$or": [{"$and": db_query_list}]}
     
     if USE_CAPTION_FILTER:
-        search_filter["$or"].append({"caption": db_query})
+        caption_query_list = [{"caption": cond} for cond in and_conditions]
+        search_filter["$or"].append({"$and": caption_query_list})
 
     results = []
     

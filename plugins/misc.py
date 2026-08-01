@@ -88,11 +88,11 @@ async def who_is(client, message):
 
     message_out_str = ""
     message_out_str += f"<b>➲First Name:</b> {from_user.first_name}\n"
-    last_name = from_user.last_name or 'Not have'
+    last_name = from_user.last_name or '❌ Not have'
     message_out_str += f"<b>➲Last Name:</b> {last_name}\n"
     message_out_str += f"<b>➲Telegram ID:</b> <code>{from_user.id}</code>\n"
-    username = f'@{from_user.username}' if from_user.username else 'Not have'
-    dc_id = from_user.dc_id or "Not found"
+    username = f'@{from_user.username}' if from_user.username else '❌ Not have'
+    dc_id = from_user.dc_id or "❌ Not found"
     message_out_str += f"<b>➲Data Centre:</b> <code>{dc_id}</code>\n"
     message_out_str += f"<b>➲Username:</b> {username}\n"
     message_out_str += f"<b>➲Last Online:</b> {last_online(from_user)}\n"
@@ -139,13 +139,13 @@ def last_online(from_user):
     elif from_user.status == enums.UserStatus.RECENTLY:
         time += "Recently"
     elif from_user.status == enums.UserStatus.LAST_WEEK:
-        time += "Within the last week"
+        time += "📅 Within the last week"
     elif from_user.status == enums.UserStatus.LAST_MONTH:
-        time += "Within the last month"
+        time += "📅 Within the last month"
     elif from_user.status == enums.UserStatus.LONG_AGO:
-        time += "A long time ago :("
+        time += "⏳ A long time ago :("
     elif from_user.status == enums.UserStatus.ONLINE:
-        time += "Currently Online"
+        time += "🟢 Currently Online"
     elif from_user.status == enums.UserStatus.OFFLINE:
         time += from_user.last_online_date.strftime("%a, %d %b %Y, %H:%M:%S")
     return time

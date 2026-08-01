@@ -60,10 +60,10 @@
 ## Variables
 ### Required Variables
 * `BOT_TOKEN`: Create a bot using [@BotFather](https://telegram.dog/BotFather), and get the Telegram API token.
-* `API_ID`: Get this value from [telegram.org](https://my.telegram.org/apps)
-* `API_HASH`: Get this value from [telegram.org](https://my.telegram.org/apps)
+* `API_ID`: Get this value from [telegram.org](https://my.telegram.org/apps). For more help watch this [tutorial](https://www.youtube.com/results?search_query=how+to+get+Telegram+API+ID+API+HASH)
+* `API_HASH`: Get this value from [telegram.org](https://my.telegram.org/apps). For more help watch this [tutorial](https://www.youtube.com/results?search_query=how+to+get+Telegram+API+ID+API+HASH)
 * `ADMINS`: ID of Admins. (Multiple admins can be used separated by space)
-* `FILES_DATABASE_URL`: MongoDB URL for 1st files database. Get this value from [MongoDB](https://www.mongodb.com). For more help watch this [video](https://youtu.be/1G1XwEOnxxo)
+* `FILES_DATABASE_URL`: MongoDB URL for 1st files database. Get this value from [MongoDB](https://www.mongodb.com). For more help watch this [tutorial](https://www.youtube.com/results?search_query=mongodb+atlas+connection+string+python)
 * `DATA_DATABASE_URL`: for save user, group, etc data.
 * `LOG_CHANNEL` : A channel to log the activities of bot. add channel id and Make sure bot is an admin in the channel.
 * `BIN_CHANNEL`: A channel to the stream and download feature, add channel id and make bot admin in channel.
