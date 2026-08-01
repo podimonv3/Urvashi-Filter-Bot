@@ -103,16 +103,17 @@ async def is_subscribed(bot, query):
                 )
     req_fsub = await db.get_req_fsub()
     req_fsub_channel = req_fsub if req_fsub else REQUEST_FORCE_SUB_CHANNEL
-    if req_fsub_channel and not await db.find_join_req(query.from_user.id):
-        id = req_fsub_channel
-        chat = await bot.get_chat(int(id))
-        try:
-            await bot.get_chat_member(int(id), query.from_user.id)
-        except UserNotParticipant:
-            url = await bot.create_chat_invite_link(int(id), creates_join_request=True)
-            btn.append(
-                [InlineKeyboardButton(f'✨ Request : {chat.title}', url=url.invite_link)]
-            )
+    if req_fsub_channel:
+        for id in req_fsub_channel.split(' '):
+            if not await db.find_join_req(query.from_user.id, int(id)):
+                chat = await bot.get_chat(int(id))
+                try:
+                    await bot.get_chat_member(int(id), query.from_user.id)
+                except UserNotParticipant:
+                    url = await bot.create_chat_invite_link(int(id), creates_join_request=True)
+                    btn.append(
+                        [InlineKeyboardButton(f'✨ Request : {chat.title}', url=url.invite_link)]
+                    )
     return btn
 
 
@@ -130,14 +131,6 @@ def upload_image(file_path):
     else:
         return None
 
-
-def list_to_str(k):
-    if not k:
-        return "N/A"
-    elif len(k) == 1:
-        return str(k[0])
-    else:
-        return ", ".join(str(i) for i in k)
 
 
 async def get_poster(query):
@@ -194,22 +187,29 @@ async def get_poster(query):
     if data.get("poster_path"):
         poster = f"https://image.tmdb.org/t/p/original{data['poster_path']}"
 
-    release_date = data.get("release_date") or data.get("first_air_date")
+    release_date = data.get("release_date") or data.get("first_air_date") or "N/A"
 
-    genres = list_to_str([g["name"] for g in data.get("genres", [])])
+    genres_list = data.get("genres", [])
+    genres = ", ".join([f"#{g['name'].title().replace(' ', '').replace('-', '')}" for g in genres_list]) if genres_list else "N/A"
 
-    runtime = None
     if media_type == "movie":
-        runtime = data.get("runtime")
+        runtime_val = data.get("runtime")
     else:
-        runtime = list_to_str(data.get("episode_run_time"))
+        ep_rt = data.get("episode_run_time")
+        runtime_val = ep_rt[0] if ep_rt else None
+    runtime = f"{runtime_val} min" if runtime_val else "N/A"
 
-    plot = data.get("overview") if LONG_IMDB_DESCRIPTION else str(data.get("overview"))[:200]
+    plot = data.get("overview")
+    plot = plot if LONG_IMDB_DESCRIPTION else (str(plot)[:200] if plot else "N/A")
 
-    rating = data.get("vote_average")
-    votes = data.get("vote_count")
-    languages = list_to_str([l["english_name"] for l in data.get("spoken_languages", [])])
-    countries = list_to_str([c["name"] for c in data.get("production_countries", [])])
+    rating = data.get("vote_average") or "N/A"
+    votes = data.get("vote_count") or "N/A"
+
+    langs_list = data.get("spoken_languages", [])
+    languages = ", ".join([f"#{l['english_name'].title().replace(' ', '').replace('-', '')}" for l in langs_list]) if langs_list else "N/A"
+
+    countries_list = data.get("production_countries", [])
+    countries = ", ".join([f"#{c['name'].title().replace(' ', '').replace('-', '')}" for c in countries_list]) if countries_list else "N/A"
 
     return {
         "title": title,
@@ -254,13 +254,13 @@ async def update_verify_status(user_id, verify_token="", is_verified=False, link
     
 async def is_premium(user_id, bot):
     if not IS_PREMIUM:
-        return True
+        return False
     if user_id in ADMINS:
         return True
     mp = await db.get_plan(user_id)
     if mp['premium']:
         if mp['expire'] < datetime.now():
-            await bot.send_message(user_id, f"⏳ <b>VIP Premium Expiring Soon!</b>\n\n<blockquote>👑 Your <b>{mp['plan']}</b> VIP Premium access will expire on <code>{mp['expire'].strftime('%Y.%m.%d %H:%M:%S')}</code>. Please use /plan to renew your subscription and maintain uninterrupted ad-free service!</blockquote>")
+            await bot.send_message(user_id, f"⏳ <b>VIP Premium Expired!</b>\n\n<blockquote>👑 Your <b>{mp['plan']}</b> VIP Premium access will expire on <code>{mp['expire'].strftime('%Y.%m.%d %H:%M:%S')}</code>. Please use /plan to renew your subscription and maintain uninterrupted ad-free service!</blockquote>")
             mp['expire'] = ''
             mp['plan'] = ''
             mp['premium'] = False
@@ -280,7 +280,7 @@ async def check_premium(bot):
                 try:
                     await bot.send_message(
                         p['id'],
-                        f"⏳ <b>VIP Premium Expiring Soon!</b>\n\n<blockquote>👑 Your <b>{mp['plan']}</b> VIP Premium access will expire on <code>{mp['expire'].strftime('%Y.%m.%d %H:%M:%S')}</code>. Please use /plan to renew your subscription and maintain uninterrupted ad-free service!</blockquote>"
+                        f"⏳ <b>VIP Premium Expired!</b>\n\n<blockquote>👑 Your <b>{mp['plan']}</b> VIP Premium access will expire on <code>{mp['expire'].strftime('%Y.%m.%d %H:%M:%S')}</code>. Please use /plan to renew your subscription and maintain uninterrupted ad-free service!</blockquote>"
                     )
                 except Exception:
                     pass

@@ -243,9 +243,9 @@ async def list_chats(bot, message):
 async def join_reqs(client, message: ChatJoinRequest):
     req_fsub = await db.get_req_fsub()
     req_fsub_channel = req_fsub if req_fsub else REQUEST_FORCE_SUB_CHANNEL
-    if req_fsub_channel and message.chat.id == int(req_fsub_channel):
-        if not await db.find_join_req(message.from_user.id):
-            await db.add_join_req(message.from_user.id)
+    if req_fsub_channel and str(message.chat.id) in req_fsub_channel.split(' '):
+        if not await db.find_join_req(message.from_user.id, message.chat.id):
+            await db.add_join_req(message.from_user.id, message.chat.id)
 
 
 @Client.on_message(filters.command("delreq") & filters.private & filters.user(ADMINS))

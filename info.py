@@ -142,7 +142,7 @@ PM_SEARCH = is_enabled('PM_SEARCH', True)
 
 # bot string settings
 FORCE_SUB_CHANNELS = environ.get('FORCE_SUB_CHANNELS', '')  # For multiple channels, separate channel IDs with spaces. Example: "-100xxxxx -100xxxxx -100xxxxx"
-REQUEST_FORCE_SUB_CHANNEL = environ.get('REQUEST_FORCE_SUB_CHANNEL', '')
+REQUEST_FORCE_SUB_CHANNEL = environ.get('REQUEST_FORCE_SUB_CHANNEL', '')  # For multiple channels, separate channel IDs with spaces. Example: "-100xxxxx -100xxxxx -100xxxxx"
 
 # for stream
 IS_STREAM = is_enabled('IS_STREAM', True)
@@ -153,18 +153,17 @@ if len(BIN_CHANNEL) == 0:
 else:
     BIN_CHANNEL = int(BIN_CHANNEL)
 URL = environ.get("URL", "")
-if len(URL) == 0:
-    logger.error('URL is missing, exiting now')
-    exit()
-else:
+if URL:
     if URL.startswith(('https://', 'http://')):
         if not URL.endswith("/"):
             URL += '/'
     elif is_valid_ip(URL):
         URL = f'http://{URL}/'
     else:
-        logger.error('URL is not valid, exiting now')
-        exit()
+        logger.error('URL is not valid, ignoring URL setting')
+        URL = ""
+else:
+    logger.warning("URL is missing. Mini WebApp and Stream features will be disabled.")
 
 #start command reactions 
 REACTIONS = [reactions for reactions in environ.get('REACTIONS', '🤝 😇 🤗 😍 👍 🎅 😐 🥰 🤩 😱 🤣 😘 👏 😛 😈 🎉 ⚡️ 🫡 🤓 😎 🏆 🔥 🤭 🌚 🆒 👻 😁').split()]  # Multiple reactions can be used separated by space

@@ -77,9 +77,9 @@ async def start(client, message):
         ],[
             InlineKeyboardButton('🎬 Popular Movies', url="https://www.themoviedb.org/movie"),
             InlineKeyboardButton('📺 Popular TV Shows', url="https://www.themoviedb.org/tv")
-        ],[
-            InlineKeyboardButton('🌐 Mini WebApp', style=enums.ButtonStyle.SUCCESS, web_app=WebAppInfo(url=URL))
         ]]
+        if URL:
+            buttons.append([InlineKeyboardButton('🌐 Mini WebApp', style=enums.ButtonStyle.SUCCESS, web_app=WebAppInfo(url=URL))])
         reply_markup = InlineKeyboardMarkup(buttons)
         await message.reply_photo(
             photo=random.choice(PICS),
@@ -178,7 +178,7 @@ async def start(client, message):
             f_id_str = str(file['_id'])
             watch_btn = InlineKeyboardButton("🗑️ Remove Watchlist", callback_data=f"del_watch#{f_id_str}") if f_id_str in user_watchlist else InlineKeyboardButton("🔖 Add Watchlist", callback_data=f"add_watch#{f_id_str}")
             fav_btn = InlineKeyboardButton("💔 Remove Favorites", callback_data=f"del_fav#{f_id_str}") if f_id_str in user_favorites else InlineKeyboardButton("❤️ Add Favorites", callback_data=f"add_fav#{f_id_str}")
-            if IS_STREAM:
+            if IS_STREAM and URL:
                 btn = [[
                     InlineKeyboardButton("⚡ Watch & Download", callback_data=f"stream#{f_id_str}")
                 ],[
@@ -244,7 +244,7 @@ async def start(client, message):
     f_id_str = str(file_id)
     watch_btn = InlineKeyboardButton("🗑️ Remove Watchlist", callback_data=f"del_watch#{f_id_str}") if f_id_str in user_watchlist else InlineKeyboardButton("🔖 Add Watchlist", callback_data=f"add_watch#{f_id_str}")
     fav_btn = InlineKeyboardButton("💔 Remove Favorites", callback_data=f"del_fav#{f_id_str}") if f_id_str in user_favorites else InlineKeyboardButton("❤️ Add Favorites", callback_data=f"add_fav#{f_id_str}")
-    if IS_STREAM:
+    if IS_STREAM and URL:
         btn = [[
             InlineKeyboardButton("⚡ Watch & Download", callback_data=f"stream#{f_id_str}")
         ],[
@@ -488,6 +488,8 @@ async def favorites_cmd(client, message):
 async def myplan(client, message):
     if not IS_PREMIUM:
         return await message.reply('⚠️ <b>Premium features are currently disabled by admin.</b>')
+    if message.from_user.id in ADMINS:
+        return await message.reply("👑 <b>Admin account already has unlimited premium access!</b>")
     mp = await db.get_plan(message.from_user.id)
     if not await is_premium(message.from_user.id, client):
         btn = [[
@@ -636,7 +638,7 @@ async def set_fsub_cmd(client, message):
 @Client.on_message(filters.command("set_req_fsub") & filters.user(ADMINS))
 async def set_req_fsub_cmd(client, message):
     if len(message.command) < 2:
-        return await message.reply("ℹ️ **Usage:** `/set_req_fsub channel_id`\nExample: `/set_req_fsub -100123456789`")
-    channel = message.command[1]
+        return await message.reply("ℹ️ **Usage:** `/set_req_fsub channel_id1 channel_id2`\nExample: `/set_req_fsub -100123456789 -100987654321`")
+    channel = " ".join(message.command[1:])
     await db.set_req_fsub(channel)
-    await message.reply(f"✅ <b>Request Force Sub Channel updated!</b>\n\nChannel: <code>{channel}</code>")
+    await message.reply(f"✅ <b>Request Force Sub Channels updated!</b>\n\nChannels: <code>{channel}</code>")

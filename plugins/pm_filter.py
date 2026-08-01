@@ -330,6 +330,8 @@ async def languages_(client: Client, query: CallbackQuery):
             if lang.lower() in fname:
                 available_langs.add(lang.lower())
     available_langs = sorted(available_langs)
+    if not available_langs:
+        return await query.answer("⚠️ No specific languages available for these files!", show_alert=True)
 
     current_sel = SELECT.get(key)
     lang_sel = current_sel.get('lang')
@@ -406,6 +408,8 @@ async def quality(client: Client, query: CallbackQuery):
             if qual.lower() in fname:
                 available_quals.add(qual.lower())
     available_quals = sorted(available_quals)
+    if not available_quals:
+        return await query.answer("⚠️ No specific qualities available for these files!", show_alert=True)
 
     current_sel = SELECT.get(key)
     lang_sel = current_sel.get('lang')
@@ -921,9 +925,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
         await query.message.edit(f"🎉 <b>Trial Activated Successfully!</b>\n\n<blockquote>✨ You now have 1 Hour of full VIP Premium access! Enjoy lightning-fast, ad-free downloads.</blockquote>\n\n⏰ <b>Expires On:</b> <code>{ex.strftime('%Y.%m.%d %H:%M:%S')}</code>")
 
     elif query.data == 'activate_plan':
-        btn = [[
-            InlineKeyboardButton('💳 Pay using WebApp', web_app=WebAppInfo(url=URL + 'activate-plan'))
-        ]]
+        btn = []
+        if URL:
+            btn.append([InlineKeyboardButton('💳 Pay using WebApp', web_app=WebAppInfo(url=URL + 'activate-plan'))])
+        else:
+            btn.append([InlineKeyboardButton('💳 Contact Admin to Pay', url=f"https://t.me/{OWNER_USERNAME}")])
         if await is_premium(query.from_user.id, client):
             txt = f"💎 <b>Activate VIP Premium Subscription</b>\n\n<blockquote>Click the button below to complete your activation via our secure WebApp!</blockquote>\n\n👑 <b>Status:</b> You are already an active VIP Premium member!\n💬 <b>24/7 Support:</b> @{OWNER_USERNAME}" 
         else:
@@ -974,9 +980,9 @@ async def cb_handler(client: Client, query: CallbackQuery):
         ],[
             InlineKeyboardButton('🎬 Popular Movies', url="https://www.themoviedb.org/movie"),
             InlineKeyboardButton('📺 Popular TV Shows', url="https://www.themoviedb.org/tv")
-        ],[
-            InlineKeyboardButton('🌐 Mini WebApp', style=enums.ButtonStyle.SUCCESS, web_app=WebAppInfo(url=URL))
         ]]
+        if URL:
+            buttons.append([InlineKeyboardButton('🌐 Mini WebApp', style=enums.ButtonStyle.SUCCESS, web_app=WebAppInfo(url=URL))])
         reply_markup = InlineKeyboardMarkup(buttons)
         await safe_edit_media_caption(
             query,

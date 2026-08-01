@@ -67,13 +67,14 @@
 * `DATA_DATABASE_URL`: for save user, group, etc data.
 * `LOG_CHANNEL` : A channel to log the activities of bot. add channel id and Make sure bot is an admin in the channel.
 * `BIN_CHANNEL`: A channel to the stream and download feature, add channel id and make bot admin in channel.
-* `URL`: Add you deployed bot app link or vps IP address
 ### Optional Variables
-* `AUTH_CHANNEL`: ID of force subscribe channels (Multiple channels can be used separated by space)
+* `FORCE_SUB_CHANNELS`: ID of force subscribe channels (Multiple channels can be used separated by space)
+* `REQUEST_FORCE_SUB_CHANNEL`: ID of request force subscribe channels (Multiple channels can be used separated by space)
 * `INDEX_CHANNELS`: Username or ID of your files channels (Multiple channels can be used separated by space)
 * `LANGUAGES`: Language of your bot search (Multiple languages can be used separated by space)
 * `TMDB_API_KEY`: API key for TMDb to get TMDb data. Get API key from [here](https://www.themoviedb.org/settings/api)
 * `UPDATES_SEND_CHANNEL`: Channel ID for send updates if added new movie or tv series to database (Must need to add TMDB_API_KEY for send with TMDb info)
+* `URL`: Add you deployed bot app link or vps IP address
 * Check [info.py](https://github.com/xHansaka-Anuhas/Nova-Filter-Bot/blob/main/info.py) for more optional variables
 
 

@@ -123,15 +123,12 @@ class Database:
     async def delete_chat(self, grp_id):
         await self.grp.delete_many({'id': int(grp_id)})
 
-    async def find_join_req(self, id):
-        req = await self.req.find_one({'id': id})
+    async def find_join_req(self, user_id, channel_id):
+        req = await self.req.find_one({'user_id': user_id, 'channel_id': channel_id})
         return bool(req)
 
-    async def add_join_req(self, id):
-        await self.req.insert_one({'id': id})
-
-    async def del_join_req(self):
-        await self.req.drop()
+    async def add_join_req(self, user_id, channel_id):
+        await self.req.insert_one({'user_id': user_id, 'channel_id': channel_id})
 
     async def get_banned(self):
         users = await self.col.find({'ban_status.is_banned': True}).to_list(length=None)
