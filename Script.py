@@ -124,8 +124,7 @@ class script(object):
 • 👑 /add_prm - Grant VIP status
 • 🚫 /rm_prm - Revoke VIP status
 • 🛡️ /set_fsub - Force-Sub channels
-• 🔔 /set_req_fsub - Request FSub channel
-• 🧹 /delreq - Clear join requests</blockquote>"""
+• 🔔 /set_req_fsub - Request FSub channel</blockquote>"""
     
     PLAN_TXT = """💎 <b>Upgrade To Nova Premium</b>
 

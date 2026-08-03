@@ -1,4 +1,5 @@
 from pyrogram import Client, filters
+from pyrogram.errors import FloodWait, MessageNotModified
 import time
 from database.users_chats_db import db
 from info import ADMINS
@@ -40,7 +41,14 @@ async def users_broadcast(bot, message):
             time_taken = get_readable_time(time.time()-start_time)
             if temp.USERS_CANCEL:
                 temp.USERS_CANCEL = False
-                await b_sts.edit(f"🛑 <b>Users Broadcast Cancelled!</b>\n\n<blockquote>⏱️ <b>Time Taken:</b> {time_taken}\n👥 <b>Total Users:</b> <code>{total_users}</code>\n📬 <b>Completed:</b> <code>{done} / {total_users}</code>\n✅ <b>Success:</b> <code>{success}</code></blockquote>")
+                try:
+                    await b_sts.edit(f"🛑 <b>Users Broadcast Cancelled!</b>\n\n<blockquote>⏱️ <b>Time Taken:</b> {time_taken}\n👥 <b>Total Users:</b> <code>{total_users}</code>\n📬 <b>Completed:</b> <code>{done} / {total_users}</code>\n✅ <b>Success:</b> <code>{success}</code></blockquote>")
+                except MessageNotModified:
+                    pass
+                except FloodWait as e:
+                    await asyncio.sleep(e.value)
+                except Exception:
+                    pass
                 return
             sts = await broadcast_messages(int(user['id']), b_msg, pin)
             if sts == 'Success':
@@ -52,8 +60,22 @@ async def users_broadcast(bot, message):
                 btn = [[
                     InlineKeyboardButton('⚠️ Cancel', callback_data='broadcast_cancel#users')
                 ]]
-                await b_sts.edit(f"🔄 <b>Users Broadcast Progress:</b>\n\n<blockquote>👥 <b>Total Users:</b> <code>{total_users}</code>\n📬 <b>Completed:</b> <code>{done} / {total_users}</code>\n✅ <b>Success:</b> <code>{success}</code></blockquote>", reply_markup=InlineKeyboardMarkup(btn))
-        await b_sts.edit(f"🎉 <b>Users Broadcast Completed!</b>\n\n<blockquote>⏱️ <b>Time Taken:</b> {time_taken}\n👥 <b>Total Users:</b> <code>{total_users}</code>\n📬 <b>Completed:</b> <code>{done} / {total_users}</code>\n✅ <b>Success:</b> <code>{success}</code></blockquote>")
+                try:
+                    await b_sts.edit(f"🔄 <b>Users Broadcast Progress:</b>\n\n<blockquote>👥 <b>Total Users:</b> <code>{total_users}</code>\n📬 <b>Completed:</b> <code>{done} / {total_users}</code>\n✅ <b>Success:</b> <code>{success}</code></blockquote>", reply_markup=InlineKeyboardMarkup(btn))
+                except MessageNotModified:
+                    pass
+                except FloodWait as e:
+                    await asyncio.sleep(e.value)
+                except Exception:
+                    pass
+        try:
+            await b_sts.edit(f"🎉 <b>Users Broadcast Completed!</b>\n\n<blockquote>⏱️ <b>Time Taken:</b> {time_taken}\n👥 <b>Total Users:</b> <code>{total_users}</code>\n📬 <b>Completed:</b> <code>{done} / {total_users}</code>\n✅ <b>Success:</b> <code>{success}</code></blockquote>")
+        except MessageNotModified:
+            pass
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+        except Exception:
+            pass
 
 
 @Client.on_message(filters.command(["grp_broadcast", "pin_grp_broadcast"]) & filters.user(ADMINS) & filters.reply)
@@ -78,7 +100,14 @@ async def groups_broadcast(bot, message):
             time_taken = get_readable_time(time.time()-start_time)
             if temp.GROUPS_CANCEL:
                 temp.GROUPS_CANCEL = False
-                await b_sts.edit(f"🛑 <b>Groups Broadcast Cancelled!</b>\n\n<blockquote>⏱️ <b>Time Taken:</b> {time_taken}\n👥 <b>Total Groups:</b> <code>{total_chats}</code>\n📬 <b>Completed:</b> <code>{done} / {total_chats}</code>\n✅ <b>Success:</b> <code>{success}</code>\n❌ <b>Failed:</b> <code>{failed}</code></blockquote>")
+                try:
+                    await b_sts.edit(f"🛑 <b>Groups Broadcast Cancelled!</b>\n\n<blockquote>⏱️ <b>Time Taken:</b> {time_taken}\n👥 <b>Total Groups:</b> <code>{total_chats}</code>\n📬 <b>Completed:</b> <code>{done} / {total_chats}</code>\n✅ <b>Success:</b> <code>{success}</code>\n❌ <b>Failed:</b> <code>{failed}</code></blockquote>")
+                except MessageNotModified:
+                    pass
+                except FloodWait as e:
+                    await asyncio.sleep(e.value)
+                except Exception:
+                    pass
                 return
             sts = await groups_broadcast_messages(int(chat['id']), b_msg, pin)
             if sts == 'Success':
@@ -90,7 +119,21 @@ async def groups_broadcast(bot, message):
                 btn = [[
                     InlineKeyboardButton('⚠️ Cancel', callback_data='broadcast_cancel#groups')
                 ]]
-                await b_sts.edit(f"🔄 <b>Groups Broadcast Progress:</b>\n\n<blockquote>👥 <b>Total Groups:</b> <code>{total_chats}</code>\n📬 <b>Completed:</b> <code>{done} / {total_chats}</code>\n✅ <b>Success:</b> <code>{success}</code>\n❌ <b>Failed:</b> <code>{failed}</code></blockquote>", reply_markup=InlineKeyboardMarkup(btn))    
-        await b_sts.edit(f"🎉 <b>Groups Broadcast Completed!</b>\n\n<blockquote>⏱️ <b>Time Taken:</b> {time_taken}\n👥 <b>Total Groups:</b> <code>{total_chats}</code>\n📬 <b>Completed:</b> <code>{done} / {total_chats}</code>\n✅ <b>Success:</b> <code>{success}</code>\n❌ <b>Failed:</b> <code>{failed}</code></blockquote>")
+                try:
+                    await b_sts.edit(f"🔄 <b>Groups Broadcast Progress:</b>\n\n<blockquote>👥 <b>Total Groups:</b> <code>{total_chats}</code>\n📬 <b>Completed:</b> <code>{done} / {total_chats}</code>\n✅ <b>Success:</b> <code>{success}</code>\n❌ <b>Failed:</b> <code>{failed}</code></blockquote>", reply_markup=InlineKeyboardMarkup(btn))    
+                except MessageNotModified:
+                    pass
+                except FloodWait as e:
+                    await asyncio.sleep(e.value)
+                except Exception:
+                    pass
+        try:
+            await b_sts.edit(f"🎉 <b>Groups Broadcast Completed!</b>\n\n<blockquote>⏱️ <b>Time Taken:</b> {time_taken}\n👥 <b>Total Groups:</b> <code>{total_chats}</code>\n📬 <b>Completed:</b> <code>{done} / {total_chats}</code>\n✅ <b>Success:</b> <code>{success}</code>\n❌ <b>Failed:</b> <code>{failed}</code></blockquote>")
+        except MessageNotModified:
+            pass
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+        except Exception:
+            pass
 
 

@@ -2,7 +2,7 @@ import re
 import time
 import asyncio
 from pyrogram import Client, filters, enums
-from pyrogram.errors import FloodWait
+from pyrogram.errors import FloodWait, MessageNotModified
 from info import ADMINS, INDEX_EXTENSIONS
 from database.ia_filterdb import save_file
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -106,8 +106,12 @@ async def index_files_to_db(lst_msg_id, chat, msg, bot, skip):
                     ]]
                     try:
                         await msg.edit_text(text=f"🔄 <b>Indexing Progress:</b>\n\n<blockquote>📬 <b>Messages Received:</b> <code>{current}</code>\n✅ <b>Saved to Database:</b> <code>{total_files}</code>\n⏩ <b>Duplicate Skipped:</b> <code>{duplicate}</code>\n🗑️ <b>Deleted Skipped:</b> <code>{deleted}</code>\n💬 <b>Non-Media Skipped:</b> <code>{no_media + unsupported}</code>\n📂 <b>Unsupported Media:</b> <code>{unsupported}</code>\n❌ <b>Errors Occurred:</b> <code>{errors}</code>\n⚠️ <b>Bad Files Ignored:</b> <code>{badfiles}</code></blockquote>", reply_markup=InlineKeyboardMarkup(btn))
+                    except MessageNotModified:
+                        pass
                     except FloodWait as e:
                         await asyncio.sleep(e.value)
+                    except Exception:
+                        pass
                 if message.empty:
                     deleted += 1
                     continue
