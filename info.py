@@ -104,7 +104,7 @@ if len(SECOND_FILES_DATABASE_URL) == 0:
 
 # Links
 SUPPORT_LINK = environ.get('SUPPORT_LINK', 'https://t.me/+xlFmD30B2b9jNjQ1')
-UPDATES_LINK = environ.get('UPDATES_LINK', 'https://t.me/+V_bVb-RsTQxkZjM1')
+UPDATES_LINK = environ.get('UPDATES_LINK', 'https://t.me/+BBQD-GlleKswZjRl')
 FILMS_LINK = environ.get('FILMS_LINK', 'https://t.me/+VqyHBSateMcwNjU9')
 TUTORIAL = environ.get("TUTORIAL", "https://t.me/+V_bVb-RsTQxkZjM1")
 TUTORIAL_NAME = environ.get("TUTORIAL_NAME", "Tutorial")
